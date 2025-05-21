@@ -1,0 +1,334 @@
+---
+title: "Are Fighting Games the Ultimate Genre of Esports?"
+author: "Thomas Burrell (tmb9ccd)"
+date: "April 20, 2022"
+output:
+  rmdformats::robobook:
+  html_document:
+    code_folding: yes
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+runtime: shiny
+---
+
+<style>
+h1.title {
+  font-size: 35px;
+}
+h1 {
+  font-size: 26px;
+}
+h2 {
+  font-size: 22px;
+}
+h3 { 
+  font-size: 18px;
+}
+
+</style>
+
+
+![](League.jpg)
+
+# Article
+
+[Link to Article](https://websterjournal.com/2022/03/11/fighting-games-are-the-ultimate-genre-of-competitive-esports/)
+
+My article is about the emergence of esports into the sports entertainment world. Over the last decade, more and more video games are developing some sort of esport scene, with games like Overwatch, Valorant, and Call of Duty having their own leagues. Despite the large player bases of the previously listed games, many deem that Fighting games are the best genre for competitive esports. Although being played completely online, millions of viewers tune in to watch these professional gamers face off in a dramatic battle to take home the "virtual" crown. One way to measure esports' success is the prize pool that each game is offering during tournaments. Some games offer millions of dollars to the winners, and other pro players get a salary just to play for a team. There are many similarities between esports and other major sports like the NFL or NBA. Both make money through sponsorships, merchandise, and media rights. There are more ways to watch esports now than ever before. Major platforms such as Twitch, YouTube, and even television networks like ESPN have broadcasted major esports events. 
+
+## Argument
+The argument that my article presents is that the fighting game genre is the best genre for competitive esports. The author cites the net worth of one player, Daigo Umehara, who made almost $10 million just playing video games. The author uses this one player's success as the basis tht fighting games are superior to all other genres. Using a dataset from Kaggle, I will examine different metrics of esports success across all genres. These metrics include, number of players, tournaments, and total earnings.
+
+# Data Summary
+
+[Link to Data](https://www.kaggle.com/datasets/rankirsh/esports-earnings)
+
+My dataset consists of data about Esports earnings from 1985-2021. Some of the variables include, game played, release date, genre, and total earnings from game. The genre variable will be very important when grouping together games to see if fighting games are the best genre.
+
+```{r, echo=FALSE ,message=FALSE}
+library(ggplot2)
+library(dplyr)
+library(plyr)
+library(shiny)
+library(data.table)
+
+esports_data = read.csv("GeneralEsportData.csv")
+str(esports_data)
+```
+
+```{r echo=FALSE}
+# Get summary of dataset 
+summary(esports_data)
+```
+
+
+558 rows (558 games)
+
+Notes:
+
+- Convert Genre to factor (11 levels)
+- Only games with at least 1 tournament will be kept in dataset
+
+### First 6 rows of dataframe
+
+```{r echo=FALSE}
+library(knitr)
+
+kable(head(esports_data))
+```
+
+
+# Data Validation
+
+```{r echo=FALSE}
+#Converting Genre to factor (11 levels)
+esports_data$Genre = as.factor(esports_data$Genre)
+
+#Get rid of rows with 0 tournaments
+esports_data = esports_data[!esports_data$TotalTournaments==0,]
+
+#Get rid of rows with 0 earnings
+esports_data = esports_data[!esports_data$TotalEarnings==0,]
+```
+
+
+
+```{r}
+nrow(unique(esports_data))
+```
+Each row in the dataset is unique
+
+```{r}
+sum(is.na(esports_data))
+```
+There are 0 missing values from the dataset
+
+```{r}
+nrow(na.omit(esports_data))
+```
+Nothing to omit because there are 0 NA
+
+
+
+```{r echo=FALSE}
+detach(package:plyr)
+
+#Create a combined data frame that has information grouped by the genre
+
+combined = esports_data %>%
+  group_by(Genre) %>%
+  summarise(Mean_Release_Year= round(mean(ReleaseDate)), TotalEarnings = sum(TotalEarnings), TotalPlayers = sum(TotalPlayers), TotalTournaments = sum(TotalTournaments))
+
+```
+
+
+
+
+
+# Plots/Graphs
+
+```{r, warning=FALSE}
+library(forcats)
+
+ggplot(esports_data, aes(x=fct_infreq(Genre))) +
+  geom_bar(width=0.8) +
+ theme_grey()+ 
+  theme(axis.text.x = element_text( color="Black", 
+                           size=8, angle=40, hjust=.8), panel.border = element_rect(color = "black",
+                                    fill = NA,
+                                    size = 1))+
+  labs(title="Number of Games by Genre",
+        x ="Genre", y = "Count")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_fill_manual( values = c("Fighting Game" = 'Red'), guide = FALSE )
+```
+
+Fighting games are the most popular game genre in professional esports, with over 150 games. Followed by FPS (first person shooter) ans sports. 
+ 
+ 
+```{r warning=FALSE}
+ggplot(combined, aes(x=reorder(Genre, -Mean_Release_Year), y=Mean_Release_Year, fill=Genre)) +
+  geom_bar(stat="identity", width=0.8) +
+  theme_grey()+ 
+  geom_text(aes(label=Mean_Release_Year), size = 5, vjust = -.2)+
+  coord_cartesian(ylim = c(2005, 2020))+ 
+  theme(axis.text.x = element_text(color="Black",size=10, angle=40, hjust=.8), panel.border = element_rect(color = "black",
+                                    fill = NA,
+                                    size = 1))+
+  scale_fill_manual( values = c( "grey" , 'grey' , 'red' , 'grey' , 'grey' , 'grey' , 'grey',
+                                  'grey' , 'grey' , 'grey' , 'grey'), guide = FALSE )+
+  labs(title = "Average Release Year by Genre", x ="Genre", y = "Average Release Year")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+The Fighting Game genre is tied for second to last in terms of average release year, indicating that Fighting Games may have been replaced by newer game genres such as Battle Royale. 
+
+
+```{r echo=FALSE}
+# Create two versions of the esports dataset, one with release dates before 2013 and one with dates after 2013
+
+pre_2013_data = esports_data[esports_data$ReleaseDate < 2013,]
+
+post_2013_data = esports_data[esports_data$ReleaseDate >= 2013,]
+```
+
+
+```{r warning=FALSE}
+ggplot(esports_data, aes(x=Genre, y=TotalEarnings))  +
+  geom_boxplot(fill='orange', outlier.shape = NA,width = .6) +
+  geom_jitter(color="red", size=.8, alpha=0.5)+
+ theme_grey() +
+  coord_cartesian(ylim = c(0, 10000000))+ 
+  theme(axis.text.x = element_text( color="Black", 
+                           size=9, angle=40, hjust=.8), panel.border = element_rect(color = "black",
+                                    fill = NA,
+                                    size = 1))+
+  scale_y_continuous(labels = scales::comma) +
+  labs(title="Total Earnings ($) by Genre",
+        x ="Genre", y = "Total Earnings ($)")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+The median Total Earning by genre varies quite a bit between $0 and $500,000. However, the Battle Royale Genre far surpasses the total earnings of all other genres combined. This could be due to how new the Battle Royale Genre is, and the few data points it has. Fighting Games pale in comparison to other genres' Total Earnings.
+
+```{r}
+ggplot(pre_2013_data, aes(x=Genre, y=TotalEarnings))  +
+  geom_boxplot(fill='orange', outlier.shape = NA,width = .6) +
+ theme_grey() +
+  coord_cartesian(ylim = c(0, 2000000))+ 
+  theme(axis.text.x = element_text( color="Black", 
+                           size=8, angle=40, hjust=.8), panel.border = element_rect(color = "black",
+                                    fill = NA,
+                                    size = 1))+
+  scale_y_continuous(labels = scales::comma) +
+  labs(title="Total Earnings ($) by Genre Before 2013",
+        x ="Genre", y = "Total Earnings ($)")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Fighting Games are quite old in terms of a genre, so perhaps it is better to look at older data to see how the genre compares to others. Even when looking at older video games when Fighting Games were more popular, the Fighting Game genre just doesn't have much total money earned to show for it.
+
+```{r}
+ggplot(post_2013_data, aes(x=Genre, y=TotalEarnings))  +
+  geom_boxplot(fill='orange') +
+ theme_grey() +
+  coord_cartesian(ylim = c(0, 2700000))+ 
+  theme(axis.text.x = element_text( color="Black", 
+                           size=8, angle=40, hjust=.8))+
+  scale_y_continuous(labels = scales::comma) +
+  labs(title="Total Earnings ($) by Genre After 2013",
+        x ="Genre", y = "Total Earnings ($)")+
+  theme(plot.title = element_text(hjust = 0.5), panel.border = element_rect(color = "black",
+                                    fill = NA,
+                                    size = 1))
+```
+
+This plot shows Total Earnings by Genre after 2013, and Fighting Games are greatly outpaced by other genres, with having the lowest median total earnings similar to puzzle games.
+
+```{r}
+ui <- fluidPage(
+  selectInput("genre", label = "Select Genre:",
+              choices = levels(esports_data$Genre), selected = 'Fighting Game'),
+ plotOutput("histplot"))
+
+server <- function(input, output){
+dataInput <- reactive({
+  esports_data
+})
+  
+    output$histplot <- renderPlot({
+      ggplot(esports_data[esports_data$Genre == input$genre,], aes(x=ReleaseDate))  +
+  geom_histogram(binwidth = .6, fill="orange", color="black") +
+  coord_cartesian(xlim = c(1985, 2021)) +
+  theme_grey()
+    })}
+
+shinyApp(ui = ui, server = server, options = list(height = 600)) 
+```
+
+This plot shows the distributions of video game release dates with a select box for the type of genre. The fighting game distribution shows a left skewed distribution with games being released back in the mid 1990's. Other genres such as first person shooters have a similar distribution as the fighting game genre, but first person shooters have had better success in terms of total earnings which is interesting.
+
+
+
+
+
+### Shiny Plot: Different Measurements of Success vs Genre
+
+
+```{r}
+
+
+ui <- fluidPage( 
+  radioButtons("measurement", label = "Select Measurement",
+              choices = c("TotalPlayers", "TotalTournaments","TotalEarnings")),
+ plotOutput("barplot"))
+
+server <- function(input, output){
+  dataInput <- reactive({
+  combined
+})
+  output$barplot <- renderPlot({
+    
+  ggplot(combined, aes(x=reorder(Genre, -(combined[[input$measurement]])), y=combined[[input$measurement]], fill=Genre)) +
+  geom_bar(stat="identity", width=0.8) +
+  theme_grey()+ 
+  theme(axis.text.x = element_text(color="Black",size=8, angle=40, hjust=.8))+ 
+      labs(title="Different Measurements of Success vs Genre", x = "Genre", y=input$measurement)+
+  scale_y_continuous(labels = scales::comma)+
+  scale_fill_manual( values = c( "grey" , 'grey' , 'red' , 'grey' , 'grey' , 'grey' , 'grey',
+                                  'grey' , 'grey' , 'grey' , 'grey'), guide = FALSE )
+    })}
+shinyApp(ui = ui, server = server, options = list(height = 600))
+```
+
+This shiny plot gives the user three options to see how successful each genre is using different measurements of success. The measurements include total players, tournaments, and earnings. The fighting game genre is highlighted in red to make it stand out against the other bars. There is no metric where fighting games rank the highest which further supports against the article's argument. 
+
+### Aggregate Ranking From Previous Shiny Plot
+
+```{r echo=FALSE}
+Ranking_Earnings = combined[order(-combined$TotalEarnings),]
+
+Ranking_Tournaments = combined[order(-combined$TotalTournaments),]
+
+Ranking_Players = combined[order(-combined$TotalPlayers),]
+
+```
+
+
+```{r, echo=FALSE}
+# Create 2 vectors, one that contains the aggregate rating of each genre and one that contains the genre names
+
+Name_Genre <- Ranking_Earnings$Genre
+Aggregate_Rating <- c(2.33, 1.33, 4.33, 3.67, 6.33, 5.67, 4.33, 8, 9, 10, 11)
+
+df_Rating <- data.frame(Name_Genre, Aggregate_Rating)
+
+```
+
+```{r}
+ggplot(df_Rating, aes(x=reorder(Name_Genre, -Aggregate_Rating), y=Aggregate_Rating, fill=Name_Genre)) +
+    geom_bar(stat="identity", alpha=.6, width=.4) +
+    coord_flip() +
+    xlab("") +
+    theme_bw()+
+  geom_text(aes(label=Aggregate_Rating), size = 5, vjust = .3, hjust=-.1)+
+  scale_fill_manual( values = c( "grey" , 'grey' , 'red' , 'grey' , 'grey' , 'grey' , 'grey',
+                                  'grey' , 'grey' , 'grey' , 'grey'), guide = FALSE )+
+  theme(legend.position="none", panel.border = element_rect(color = "black",
+                                    fill = NA,
+                                    size = 1))+
+  labs(title="Aggregate Rating by Genre", x = "Genre", y="Aggregate Rating")
+```
+
+This final plot shows that when combining the ranking of all measurements of success for each genre, fighting games only get an average ranking of 4.33, which is tied for 4th in aggregate rating. From this plot, we could say that First person shooters and MOBAs (Multiplayer Online Battle Arena) are the most successful type of genres.
+
+# Conclusions
+
+It is very surprising to see that the Fighting Game genre had such low measurement values despite having the most number of games by a wide margin. The final plot of aggregate rating among the three metrics (Total Earnings, Players, and Tournaments) helps prove that the argument presented in the article is wrong. Genres such as FPS and MOBAs are extremely popular with a large number of players and prize pools. Some things I would change about my data would be to include viewership to gauge how popular certain genres are to the public. 
+
+
+
+

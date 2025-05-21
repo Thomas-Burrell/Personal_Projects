@@ -1,0 +1,246 @@
+---
+title: "Examining Miami's Housing Market"
+author: "Thomas Burrell (tmb9ccd)"
+date: "February 23, 2022"
+output:
+  html_document:
+    theme: lumen
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+
+---
+
+<style>
+h1.title {
+  font-size: 35px;
+}
+h1 {
+  font-size: 26px;
+}
+h2 {
+  font-size: 22px;
+}
+h3 { 
+  font-size: 18px;
+}
+
+</style>
+
+![](/Users/treyb/Box/DS 3003/Miami_house.jpg)
+
+# Article
+
+[Link to Article](https://www.homemindset.com/why-is-miami-so-expensive/)
+
+The article I chose tries to answer the question about why Miami's real estate is so expensive and what characteristics of a house lead to the highest prices. Some important characteristics when buying a house include location, amenities, and age. Urban areas tend to have lots of job opportunities which leads to higher average pay. However, because the cost of living is also very high in cities, it tends to cancel out or outpace the pay increase people get in cities.
+
+<font size="5"> Miami is the 2nd most expensive residential real estate market in the country</font> 
+
+With cities like Los Angeles, New York, and San Francisco it make come as a surprise that Miami is so expensive, now the second most expensive residential real estate market in the Country. A household in Miami should expect to pay $2,653 a month toward home ownership costs, or roughly 81.6 percent of median income. I believe it would be beneficial to explore Miami's housing data to see if any trends occur that would help prospective home buyers make decisions before moving to an expensive area like Miami. The question I would like to answer is, are variables like structure quality, age, and floor area important to the sale price of a Miami house?
+
+# Data Summary
+
+[Link to Data](https://www.kaggle.com/deepcontractor/miami-housing-dataset)
+
+My dataset consists of 17 variables that relate to the housing market in Miami and was pulled from Kaggle. The dataset consists of relevant attributes relating to the housing market in the Miami, FL. Here is a list of the variables used in the dataset along with their type.
+```{r, echo=FALSE}
+library(ggplot2)
+library(plyr)
+
+house_data = read.csv("C:/Users/treyb/OneDrive/Desktop/Spring 2022/DS 3003/Midterm/miami-housing.csv")
+str(house_data)
+```
+There are almost 14,000 rows (which equates to 14,000 single-family homes sold in Miami). 
+
+Important variables to explore:
+
+- SALE_PRC (sale price in dollars)
+- TOT_LVG_AREA  (floor area (square feet))
+- Structure Quality (1-5)
+
+```{r}
+summary(house_data[c(4, 6, 17)])
+```
+
+- $310,000 house price (Median)
+- 1878 Ft. Floor Area (Median)
+- 3.514 Structure_quality rating (mean)
+
+
+# Data Validation
+
+```{r}
+nrow(unique(house_data))
+```
+Each row in the dataset is unique
+
+```{r}
+sum(is.na(house_data))
+```
+There are 0 missing values from the dataset
+
+```{r}
+nrow(na.omit(house_data))
+```
+Nothing to omit because there are 0 NA
+
+The dataset is extremely clean with no rows or columns to edit.
+
+    
+# Plots/Graphs
+
+## Home Price Graphic
+First, a histogram will be plotted of Home Sale Price to see what kind of distribution and spread our data has.
+
+```{r, echo=FALSE, message=FALSE}
+ggplot(house_data, aes(x=SALE_PRC)) +
+  geom_histogram(position="identity", color="black", fill="#0DA3DB")+
+  labs(
+    title = "Histogram of Home Sale Price in Miami, FL",
+    x = "Sale Price ($)",
+    y = "Count"
+  ) +
+  theme_classic() +
+  theme(
+    plot.title = element_text(color = "#0DA3DB", size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 10, face = "bold"),
+    plot.caption = element_text(face = "italic")
+  )+
+  geom_vline(data=house_data, aes(xintercept=mean(SALE_PRC), color="orange"),
+             linetype="dashed", size = 1.1)+
+  geom_vline(data=house_data, aes(xintercept=median(SALE_PRC)),
+             linetype="dashed", size = 1.1)+
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10), labels = scales::comma) 
+```
+
+As we can see from the histogram,
+
+- The median home price is $310,000 
+- The mean home price is around $400,000. 
+
+Because our distribution is skewed right, it increases the mean of home price drastically because of the very expensive homes on the right side of the plot. This histogram's shape is typical when plotting home prices because there tends to be many middle and lower priced homes with a few very expensive homes in any given area. 
+
+## SQ FT and Home Price Graphic
+
+Next, I will plot a scatterplot of Sale Price ($) vs. Total floor area (SQ FT) to see if a positive relationship exists between the two variables.
+```{r, echo=FALSE, message=FALSE}
+ggplot(house_data, aes(x=TOT_LVG_AREA, y=SALE_PRC )) + 
+  geom_point(size=1, alpha = 1/4)+
+  scale_y_continuous(labels = scales::comma, breaks = scales::pretty_breaks(n = 10))+
+  labs(
+    title = "Scatterplot of Sale Price ($) vs. Total floor area (SQ FT)",
+    x = "Total floor area (SQ FT)",
+    y = "Sale Price ($)")+
+   theme_classic() +
+  theme(
+    plot.title = element_text(color = "#0DA3DB", size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 10, face = "bold"),
+    plot.caption = element_text(face = "italic")
+  )+
+  geom_smooth(method=lm)+
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10), labels = scales::comma)
+```
+
+I decided to plot sale price against total floor area because the size of the house would seem like a very important factor when calculating price. We can see from the linear regression line that as floor area increases, the average sale price also increases.  
+
+## Age Graphics
+
+To see how influential age is on sale price of a house, I plotted a boxplot of sale price vs. age. The age variable is split up between 10 year increments with the age being rounded to the nearest 10.
+```{r, echo=FALSE, message=FALSE}
+house_data$age = round_any(house_data$age, 10)
+
+ggplot(data=house_data, aes(x=as.factor(age), y = SALE_PRC)) +
+  geom_boxplot(color="black", fill="#0DA3DB")+
+  theme_classic()+
+  labs(
+    title = "Boxplot of Sale Price vs. Age",
+    x = "Age",
+    y = "Sale Price ($)"
+  )+
+   theme_classic() +
+  theme(
+    plot.title = element_text(color = "#0DA3DB", size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 10, face = "bold"),
+    plot.caption = element_text(face = "italic")
+  )+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10), labels = scales::comma)
+```
+
+This plot does not provide too much value with all of the outliers included because it makes the y axis very large and hard to read the averages of each boxplot. To account for this, I will remove the outliers and zoom in on the boxplots.
+
+```{r, echo=FALSE, message=FALSE}
+house_data$age = round_any(house_data$age, 10)
+
+ggplot(data=house_data, aes(x=as.factor(age), y = SALE_PRC)) +
+  geom_boxplot(color="black", fill="#0DA3DB", outlier.shape =  NA)+
+  coord_cartesian(ylim=c(0, 1000000))+
+  theme_classic()+
+  labs(
+    title = "Boxplot of Sale Price vs. Age (Outliers Removed)",
+    x = "Age",
+    y = "Sale Price ($)"
+  )+
+   theme_classic() +
+  theme(
+    plot.title = element_text(color = "#0DA3DB", size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 10, face = "bold"),
+    plot.caption = element_text(face = "italic")
+  )+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10), labels = scales::comma)
+```
+
+After making the necessary changes from the first boxplot, we can see that there is not much impact of age on how much a house cost in Miami.
+
+## Structure Quality Graphics
+
+Lastly, a boxplot of structure quality vs sale price to group the sale price by each structure quality group (1-5)
+```{r, echo=FALSE, message=FALSE}
+ggplot(house_data, aes(x=as.factor(structure_quality), y=SALE_PRC)) +
+  geom_boxplot(color="black", fill="#0DA3DB")+
+  theme_classic()+
+  labs(
+    title = "Boxplots of Sale Price vs. Structure Quality",
+    x = "Structure Quality",
+    y = "Sale Price ($)"
+  )+
+   theme_classic() +
+  theme(
+    plot.title = element_text(color = "#0DA3DB", size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 10, face = "bold"),
+    plot.caption = element_text(face = "italic")
+  )+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10), labels = scales::comma)
+
+```
+
+As we can see, as the structure quality increases, the sale price also increase, besides the 3 category. We should take a closer look at the number of values in each structure quality rating using a histogram.
+
+
+
+```{r, echo=FALSE, message=FALSE}
+ggplot(house_data, aes(x=structure_quality)) +
+  geom_histogram(position="identity", color="black", fill="#0DA3DB", binwidth = 1)+
+  stat_bin(binwidth=1, geom='text', color='black', aes(label=..count..),
+           position="stack", size=5)+
+  labs(
+    title = "Histogram of Structure Quality of homes in Miami, FL",
+    x = "Structure Quality",
+    y = "Count"
+  ) +
+  theme_classic() +
+  theme(
+    plot.title = element_text(color = "#0DA3DB", size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 10, face = "bold"),
+    plot.caption = element_text(face = "italic")
+  )
+```
+
+Although the structure quality labeled 3 has the highest average sale price at $2 million, that group only contains 16 homes. This means the mean is probably not reliable because of such a small sample size.
+
+# Conclusion/Limitations
+  
+In conclusion, we found that home price is moderately to strongly correlated to the square footage of a house. This can be seen by the construction of the scatter plot. Also, we can see that structure quality is an important factor in home price, as an increase in quality leads to a higher priced home. Some limitations to this data is the inability to compare Miami's home prices with other large cities or nearby towns. Also, I would like to get more info about the structure quality rating to get a better idea of what it means in more concrete terms. This data could also be used create a house price prediction model that could help people decide whether or not a house is overpriced.
+
