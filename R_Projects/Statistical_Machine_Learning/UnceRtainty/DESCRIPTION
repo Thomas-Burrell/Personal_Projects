@@ -1,0 +1,12 @@
+Package: UnceRtainty
+Title: Evaluating Uncertainty
+Version: 0.0.0.9000
+Authors@R: 
+    person("Ethan", "Assefa", , role = c("aut")),
+    person("Thomas", "Burrell", , role = "aut"),
+    person("Tatev", "Gomtsyan", , role = "aut")
+Description: A package for helping evaluate logistic models for uncertainty and classification performance.
+License: use_mit_license()
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
